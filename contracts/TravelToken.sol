@@ -20,4 +20,8 @@ contract TravelToken is ERC20 {
         uint256 questReward = calculateQuestReward(questId);
         _mint(traveler, questReward);
     }
+    
+    function calculateQuestReward(uint256 questId) internal pure returns (uint256) {
+        return questId * 10; // Example: reward scales with quest ID
+    }
 } 

@@ -4,14 +4,16 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract TravelSBT is ERC721 {
-    function _beforeTokenTransfer(
-        address from,
+    constructor() ERC721("TravelSBT", "TSBT") {}
+    
+    function _update(
         address to,
         uint256 tokenId,
-        uint256 batchSize
-    ) internal virtual override {
+        address auth
+    ) internal virtual override returns (address) {
+        address from = _ownerOf(tokenId);
         require(from == address(0) || to == address(0), "Token is Soulbound - no transfers");
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        return super._update(to, tokenId, auth);
     }
     
     function mintMilestoneSBT(

@@ -12,6 +12,8 @@ enum NFTType {
 }
 
 contract TravelNFT is ERC721URIStorage {
+    constructor() ERC721("TravelNFT", "TNFT") {}
+    
     struct Location {
         string name;
         string country;
