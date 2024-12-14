@@ -17,5 +17,9 @@
     "@openzeppelin/contracts": "^5.1.0",
     "dotenv": "^16.4.7",
     "hardhat": "^2.22.17"
+  },
+  "dependencies": {
+    "@pinata/sdk": "^2.1.0",
+    "ipfs-http-client": "^60.0.1"
   }
 }
