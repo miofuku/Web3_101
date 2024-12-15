@@ -19,11 +19,11 @@ const LOCATIONS = {
     }
 };
 
+// Interaction functions
 async function mintNFTWithMetadata(travelNFT, ipfsHandler, location, traveler) {
     console.log(`\nMinting NFT for ${location.name}...`);
     console.log("Image path:", location.imagePath);
     
-    // Create and upload metadata
     const tokenURI = await ipfsHandler.createLocationNFTMetadata(
         location.name,
         location.country,
@@ -32,19 +32,57 @@ async function mintNFTWithMetadata(travelNFT, ipfsHandler, location, traveler) {
     );
     console.log("Metadata uploaded, tokenURI:", tokenURI);
 
-    // Mint NFT
     const mintTx = await travelNFT.mintLocationNFT(
         traveler.address,
         location.name,
         location.country,
         location.coordinates,
         tokenURI,
-        0 // NFTType.COLLECTIBLE
+        0
     );
     const receipt = await mintTx.wait();
     console.log("NFT minted successfully!");
     console.log("Transaction hash:", receipt.hash);
     return tokenURI;
+}
+
+async function mintTokens(travelToken, amount, recipient) {
+    console.log(`\nMinting ${amount} tokens for ${recipient}...`);
+    const rewardAmount = hre.ethers.parseEther(amount.toString());
+    const rewardTx = await travelToken.rewardForVisit(recipient, rewardAmount);
+    await rewardTx.wait();
+    console.log(`Rewarded ${amount} tokens to ${recipient}`);
+}
+
+async function mintSBT(travelSBT, milestoneType, recipient) {
+    console.log(`\nMinting SBT type ${milestoneType} for ${recipient}...`);
+    const sbtTx = await travelSBT.mintMilestoneSBT(recipient, milestoneType);
+    await sbtTx.wait();
+    console.log(`Minted SBT type ${milestoneType} for ${recipient}`);
+}
+
+async function checkBalances(travelNFT, travelToken, travelSBT, address) {
+    console.log(`\nChecking balances for ${address}...`);
+    const nftBalance = await travelNFT.balanceOf(address);
+    const tokenBalance = await travelToken.balanceOf(address);
+    const sbtBalance = await travelSBT.balanceOf(address);
+
+    console.log("Balances:");
+    console.log("NFTs:", nftBalance.toString());
+    console.log("Tokens:", hre.ethers.formatEther(tokenBalance));
+    console.log("SBTs:", sbtBalance.toString());
+
+    // Print NFT details
+    console.log("\nNFT Details:");
+    for (let i = 1; i <= nftBalance; i++) {
+        try {
+            const tokenId = await travelNFT.tokenOfOwnerByIndex(address, i - 1);
+            const uri = await travelNFT.tokenURI(tokenId);
+            console.log(`Token ID ${tokenId}: ${uri}`);
+        } catch (error) {
+            console.error(`Error fetching token ${i}:`, error.message);
+        }
+    }
 }
 
 async function main() {
@@ -65,47 +103,47 @@ async function main() {
     console.log("SBT:", await travelSBT.getAddress());
 
     try {
+        // Get command line arguments
+        const action = process.argv[2] || 'all';
+        const recipient = process.argv[3] || traveler.address;
+
         // Initialize IPFS handler
         const ipfsHandler = new IPFSHandler(
             process.env.PINATA_API_KEY,
             process.env.PINATA_API_SECRET
         );
 
-        // Mint NFTs for different locations
-        await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.MOUNT_FUJI, traveler);
-        await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.EIFFEL_TOWER, traveler);
+        switch (action.toLowerCase()) {
+            case 'mintnft':
+                const location = process.argv[4] || 'MOUNT_FUJI';
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS[location], recipient);
+                break;
 
-        // Reward tokens for the visits
-        const rewardAmount = hre.ethers.parseEther("100");
-        const rewardTx = await travelToken.rewardForVisit(traveler.address, rewardAmount);
-        await rewardTx.wait();
-        console.log("\nRewarded tokens:", hre.ethers.formatEther(rewardAmount));
+            case 'minttoken':
+                const amount = process.argv[4] || 100;
+                await mintTokens(travelToken, amount, recipient);
+                break;
 
-        // Mint a milestone SBT
-        const sbtTx = await travelSBT.mintMilestoneSBT(traveler.address, 1);
-        await sbtTx.wait();
-        console.log("Minted SBT for:", traveler.address);
+            case 'mintsbt':
+                const milestoneType = process.argv[4] || 1;
+                await mintSBT(travelSBT, milestoneType, recipient);
+                break;
 
-        // Check balances
-        const nftBalance = await travelNFT.balanceOf(traveler.address);
-        const tokenBalance = await travelToken.balanceOf(traveler.address);
-        const sbtBalance = await travelSBT.balanceOf(traveler.address);
+            case 'balance':
+                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
+                break;
 
-        console.log("\nTraveler Balances:");
-        console.log("NFTs:", nftBalance.toString());
-        console.log("Tokens:", hre.ethers.formatEther(tokenBalance));
-        console.log("SBTs:", sbtBalance.toString());
+            case 'all':
+                // Mint NFTs for different locations
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.MOUNT_FUJI, recipient);
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.EIFFEL_TOWER, recipient);
+                await mintTokens(travelToken, 100, recipient);
+                await mintSBT(travelSBT, 1, recipient);
+                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
+                break;
 
-        // Print token URIs for all NFTs
-        console.log("\nNFT Details:");
-        for (let i = 1; i <= nftBalance; i++) {
-            try {
-                const tokenId = await travelNFT.tokenOfOwnerByIndex(traveler.address, i - 1);
-                const uri = await travelNFT.tokenURI(tokenId);
-                console.log(`Token ID ${tokenId}: ${uri}`);
-            } catch (error) {
-                console.error(`Error fetching token ${i}:`, error.message);
-            }
+            default:
+                console.log("Unknown action. Available actions: mintNFT, mintToken, mintSBT, balance, all");
         }
 
     } catch (error) {
