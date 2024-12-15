@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@pinata/sdk": "^2.1.0",
+    "axios": "^1.7.9",
     "ipfs-http-client": "^60.0.1"
   }
 }

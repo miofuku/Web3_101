@@ -1,26 +1,57 @@
 const hre = require("hardhat");
+const fs = require('fs');
+const path = require('path');
+
+async function updateEnvFile(contracts) {
+    const envPath = path.join(__dirname, '..', '.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+
+    for (const [name, address] of Object.entries(contracts)) {
+        const varName = `TRAVEL_${name}_ADDRESS`;
+        if (envContent.includes(varName)) {
+            envContent = envContent.replace(
+                new RegExp(`${varName}=.*`), 
+                `${varName}=${address}`
+            );
+        } else {
+            envContent += `\n${varName}=${address}`;
+        }
+    }
+
+    fs.writeFileSync(envPath, envContent);
+}
 
 async function main() {
-  // Deploy TravelNFT
-  const TravelNFT = await hre.ethers.getContractFactory("TravelNFT");
-  const travelNFT = await TravelNFT.deploy();
-  await travelNFT.waitForDeployment();
-  console.log("TravelNFT deployed to:", await travelNFT.getAddress());
+    // Deploy contracts
+    const TravelNFT = await hre.ethers.getContractFactory("TravelNFT");
+    const travelNFT = await TravelNFT.deploy();
+    await travelNFT.waitForDeployment();
 
-  // Deploy TravelSBT
-  const TravelSBT = await hre.ethers.getContractFactory("TravelSBT");
-  const travelSBT = await TravelSBT.deploy();
-  await travelSBT.waitForDeployment();
-  console.log("TravelSBT deployed to:", await travelSBT.getAddress());
+    const TravelSBT = await hre.ethers.getContractFactory("TravelSBT");
+    const travelSBT = await TravelSBT.deploy();
+    await travelSBT.waitForDeployment();
 
-  // Deploy TravelToken
-  const TravelToken = await hre.ethers.getContractFactory("TravelToken");
-  const travelToken = await TravelToken.deploy();
-  await travelToken.waitForDeployment();
-  console.log("TravelToken deployed to:", await travelToken.getAddress());
+    const TravelToken = await hre.ethers.getContractFactory("TravelToken");
+    const travelToken = await TravelToken.deploy();
+    await travelToken.waitForDeployment();
+
+    // Get addresses
+    const contracts = {
+        'NFT': await travelNFT.getAddress(),
+        'TOKEN': await travelToken.getAddress(),
+        'SBT': await travelSBT.getAddress()
+    };
+
+    // Update .env file
+    await updateEnvFile(contracts);
+
+    console.log("Contracts deployed to:");
+    console.log("TravelNFT:", contracts.NFT);
+    console.log("TravelToken:", contracts.TOKEN);
+    console.log("TravelSBT:", contracts.SBT);
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 }); 
