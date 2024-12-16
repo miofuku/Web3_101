@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const IPFSHandler = require('../../frontend/src/utils/ipfsHandler');
+const IPFSHandler = require('../utils/ipfsHandler');
 const path = require('path');
 const { getContractAddress } = require('../utils/contracts');
 require('dotenv').config();

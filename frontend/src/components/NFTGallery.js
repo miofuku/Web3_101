@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
-import config from '../config';
+import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
 
 const NFTGallery = () => {
     const { contracts, account } = useContext(Web3Context);
@@ -45,6 +45,17 @@ const NFTGallery = () => {
 
         loadNFTs();
     }, [contracts.travelNFT, account]);
+
+    const loadNFTMetadata = async (tokenURI) => {
+        try {
+            const metadata = await fetchIPFSMetadata(tokenURI);
+            const imageUrl = getIPFSUrl(metadata.image);
+            return { metadata, imageUrl };
+        } catch (error) {
+            console.error('Error loading NFT metadata:', error);
+            throw error;
+        }
+    };
 
     return (
         <div className="nft-gallery">
