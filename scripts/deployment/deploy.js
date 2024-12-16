@@ -2,6 +2,7 @@ require('dotenv').config();
 const hre = require("hardhat");
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 
 async function updateEnvFile(contracts) {
     const envPath = path.join(__dirname, '..', '.env');
@@ -50,6 +51,20 @@ async function main() {
     console.log("TravelNFT:", contracts.NFT);
     console.log("TravelToken:", contracts.TOKEN);
     console.log("TravelSBT:", contracts.SBT);
+
+    // After contracts are deployed and addresses are saved
+    console.log("\nPreparing frontend files...");
+    await new Promise((resolve, reject) => {
+        exec('npx hardhat run scripts/utils/prepare-frontend.js', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error preparing frontend: ${error}`);
+                reject(error);
+                return;
+            }
+            console.log(stdout);
+            resolve();
+        });
+    });
 }
 
 main().catch((error) => {

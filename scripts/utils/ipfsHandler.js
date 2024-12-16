@@ -1,6 +1,7 @@
 const FormData = require('form-data');
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
 
 class IPFSHandler {
     constructor(apiKey, apiSecret) {
@@ -10,15 +11,86 @@ class IPFSHandler {
     }
 
     async uploadFile(filePath) {
-        // ... existing upload logic ...
+        try {
+            const formData = new FormData();
+            formData.append('file', fs.createReadStream(filePath));
+
+            const response = await axios.post(`${this.endpoint}/pinning/pinFileToIPFS`, formData, {
+                headers: {
+                    'Content-Type': `multipart/form-data; boundary=${formData.getBoundary()}`,
+                    'pinata_api_key': this.apiKey,
+                    'pinata_secret_api_key': this.apiSecret
+                }
+            });
+
+            return `ipfs://${response.data.IpfsHash}`;
+        } catch (error) {
+            console.error("Error uploading file:", error.message);
+            if (error.response) {
+                console.error("Pinata response:", error.response.data);
+            }
+            throw error;
+        }
     }
 
     async uploadJSON(jsonData) {
-        // ... existing JSON upload logic ...
+        try {
+            const response = await axios.post(`${this.endpoint}/pinning/pinJSONToIPFS`, jsonData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'pinata_api_key': this.apiKey,
+                    'pinata_secret_api_key': this.apiSecret
+                }
+            });
+
+            return `ipfs://${response.data.IpfsHash}`;
+        } catch (error) {
+            console.error("Error uploading JSON:", error.message);
+            if (error.response) {
+                console.error("Pinata response:", error.response.data);
+            }
+            throw error;
+        }
     }
 
     async createLocationNFTMetadata(name, country, coordinates, imagePath) {
-        // ... existing metadata creation logic ...
+        try {
+            console.log("Uploading image...");
+            const imageURI = await this.uploadFile(imagePath);
+            console.log("Image uploaded, URI:", imageURI);
+
+            const metadata = {
+                name,
+                description: `Travel location: ${name}, ${country}`,
+                image: imageURI,
+                attributes: [
+                    {
+                        trait_type: "Country",
+                        value: country
+                    },
+                    {
+                        trait_type: "Coordinates",
+                        value: coordinates
+                    },
+                    {
+                        trait_type: "Visit Date",
+                        value: new Date().toISOString()
+                    }
+                ]
+            };
+
+            console.log("Uploading metadata...");
+            const tokenURI = await this.uploadJSON(metadata);
+            console.log("Metadata uploaded, URI:", tokenURI);
+
+            return tokenURI;
+        } catch (error) {
+            console.error("Error creating metadata:", error.message);
+            if (error.response) {
+                console.error("Pinata response:", error.response.data);
+            }
+            throw error;
+        }
     }
 }
 

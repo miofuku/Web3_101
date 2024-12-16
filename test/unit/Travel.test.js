@@ -1,5 +1,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const path = require('path');
+const { IPFSHandler } = require('../../scripts/utils');
+
+// If you need to test with assets
+const TEST_ASSETS_PATH = path.join(__dirname, "../../assets");
 
 describe("Travel Contracts", function () {
   let TravelNFT, travelNFT;

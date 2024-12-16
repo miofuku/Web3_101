@@ -7,7 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "hardhat run scripts/deployment/deploy.js --network ganache",
+    "prepare-frontend": "hardhat run scripts/utils/prepare-frontend.js",
+    "start-frontend": "npm run prepare-frontend && cd frontend && npm start"
   },
   "keywords": [],
   "author": "",

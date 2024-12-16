@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { environments } from '../config/environments';
+import config from '../config';
 
 const IPFS_GATEWAYS = [
     "https://nftstorage.link/ipfs/",
@@ -12,7 +12,7 @@ const IPFS_GATEWAYS = [
 // Simple functions for frontend use
 export const parseIPFSHash = (ipfsUrl) => ipfsUrl.replace('ipfs://', '');
 
-export const getIPFSUrl = (ipfsHash, gateway = environments.development.ipfsGateway) => {
+export const getIPFSUrl = (ipfsHash, gateway = config.ipfsGateway) => {
     const hash = parseIPFSHash(ipfsHash);
     return `${gateway}${hash}`;
 };

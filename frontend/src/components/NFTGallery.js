@@ -1,63 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
-import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
 import { useNFTs } from '../hooks';
-import { getIPFSUrl } from '../utils';
+import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
 
 const NFTGallery = () => {
-    const { contracts, account } = useContext(Web3Context);
-    const [nfts, setNfts] = useState([]);
+    const { nfts, loading, error } = useNFTs();
 
-    useEffect(() => {
-        const loadNFTs = async () => {
-            if (!contracts.travelNFT || !account) return;
-
-            try {
-                const balance = await contracts.travelNFT.balanceOf(account);
-                const nftData = [];
-
-                for (let i = 0; i < balance; i++) {
-                    const tokenId = await contracts.travelNFT.tokenOfOwnerByIndex(account, i);
-                    const tokenURI = await contracts.travelNFT.tokenURI(tokenId);
-                    
-                    // Convert IPFS URI to HTTP URL
-                    const ipfsHash = tokenURI.replace("ipfs://", "");
-                    const metadataUrl = `${config.ipfsGateway}${ipfsHash}`;
-                    
-                    // Fetch metadata
-                    const response = await fetch(metadataUrl);
-                    const metadata = await response.json();
-                    
-                    // Convert image IPFS URI to HTTP URL
-                    const imageHash = metadata.image.replace("ipfs://", "");
-                    const imageUrl = `${config.ipfsGateway}${imageHash}`;
-
-                    nftData.push({
-                        tokenId,
-                        metadata,
-                        imageUrl
-                    });
-                }
-
-                setNfts(nftData);
-            } catch (error) {
-                console.error("Error loading NFTs:", error);
-            }
-        };
-
-        loadNFTs();
-    }, [contracts.travelNFT, account]);
-
-    const loadNFTMetadata = async (tokenURI) => {
-        try {
-            const metadata = await fetchIPFSMetadata(tokenURI);
-            const imageUrl = getIPFSUrl(metadata.image);
-            return { metadata, imageUrl };
-        } catch (error) {
-            console.error('Error loading NFT metadata:', error);
-            throw error;
-        }
-    };
+    if (loading) return <div>Loading NFTs...</div>;
+    if (error) return <div>Error: {error}</div>;
 
     return (
         <div className="nft-gallery">

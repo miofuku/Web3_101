@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const path = require('path');
-const { getContractAddress } = require('../utils/contracts');
-const IPFSHandler = require('../utils/ipfsHandler');
+const fs = require('fs');
+const { IPFSHandler, getContractAddress } = require('../utils');
 require('dotenv').config();
 
 const LOCATIONS = {
@@ -9,13 +9,13 @@ const LOCATIONS = {
         name: "Mount Fuji",
         country: "Japan",
         coordinates: "35.3606° N, 138.7278° E",
-        imagePath: path.join(__dirname, "../assets/mount-fuji.jpeg")
+        imagePath: path.join(__dirname, "../../assets/mount-fuji.jpeg")
     },
     EIFFEL_TOWER: {
         name: "Eiffel Tower",
         country: "France",
         coordinates: "48.8584° N, 2.2945° E",
-        imagePath: path.join(__dirname, "../assets/eiffel-tower.jpeg")
+        imagePath: path.join(__dirname, "../../assets/eiffel-tower.jpeg")
     }
 };
 
@@ -24,26 +24,48 @@ async function mintNFTWithMetadata(travelNFT, ipfsHandler, location, traveler) {
     console.log(`\nMinting NFT for ${location.name}...`);
     console.log("Image path:", location.imagePath);
     
-    const tokenURI = await ipfsHandler.createLocationNFTMetadata(
-        location.name,
-        location.country,
-        location.coordinates,
-        location.imagePath
-    );
-    console.log("Metadata uploaded, tokenURI:", tokenURI);
+    try {
+        // Verify IPFS handler is initialized
+        if (!ipfsHandler) {
+            throw new Error("IPFS Handler not initialized. Check Pinata credentials.");
+        }
 
-    const mintTx = await travelNFT.mintLocationNFT(
-        traveler.address,
-        location.name,
-        location.country,
-        location.coordinates,
-        tokenURI,
-        0
-    );
-    const receipt = await mintTx.wait();
-    console.log("NFT minted successfully!");
-    console.log("Transaction hash:", receipt.hash);
-    return tokenURI;
+        // Check if image exists
+        if (!fs.existsSync(location.imagePath)) {
+            throw new Error(`Image not found at path: ${location.imagePath}`);
+        }
+
+        // Create and upload metadata
+        const tokenURI = await ipfsHandler.createLocationNFTMetadata(
+            location.name,
+            location.country,
+            location.coordinates,
+            location.imagePath
+        );
+
+        if (!tokenURI) {
+            throw new Error("Failed to create metadata: tokenURI is undefined");
+        }
+
+        console.log("Metadata uploaded, tokenURI:", tokenURI);
+
+        // Mint NFT
+        const mintTx = await travelNFT.mintLocationNFT(
+            traveler.address,
+            location.name,
+            location.country,
+            location.coordinates,
+            tokenURI,
+            0 // NFTType.COLLECTIBLE
+        );
+        const receipt = await mintTx.wait();
+        console.log("NFT minted successfully!");
+        console.log("Transaction hash:", receipt.hash);
+        return tokenURI;
+    } catch (error) {
+        console.error("Error in mintNFTWithMetadata:", error);
+        throw error;
+    }
 }
 
 async function mintTokens(travelToken, amount, recipient) {
@@ -75,24 +97,27 @@ async function checkBalances(travelNFT, travelToken, travelSBT, address) {
     // Print NFT details - using sequential token ID check
     console.log("\nNFT Details:");
     let foundTokens = 0;
-    for (let tokenId = 1; foundTokens < parseInt(nftBalance.toString()); tokenId++) {
+    let maxTokenId = 10; // Limit the search to reasonable range
+
+    for (let tokenId = 1; foundTokens < parseInt(nftBalance.toString()) && tokenId <= maxTokenId; tokenId++) {
         try {
             const owner = await travelNFT.ownerOf(tokenId);
-            if (owner.toLowerCase() === address.toLowerCase()) {
+            // Convert addresses to strings for comparison
+            if (owner.toLowerCase() === address.toString().toLowerCase()) {
                 foundTokens++;
                 const uri = await travelNFT.tokenURI(tokenId);
                 console.log(`Token ID ${tokenId}: ${uri}`);
             }
         } catch (error) {
-            if (!error.message.includes("nonexistent token")) {
+            if (!error.message.includes("nonexistent token") && 
+                !error.message.includes("VM Exception")) {
                 console.error(`Error checking token ${tokenId}:`, error.message);
             }
-            // Stop checking if we've gone too far without finding all tokens
-            if (tokenId > 100) {
-                console.log("Stopping search after checking 100 token IDs");
-                break;
-            }
         }
+    }
+
+    if (foundTokens < parseInt(nftBalance.toString())) {
+        console.log(`\nWarning: Only found ${foundTokens} tokens out of ${nftBalance.toString()}`);
     }
 }
 
@@ -116,8 +141,13 @@ async function main() {
     try {
         // Get action from environment variable or default to 'all'
         const action = process.env.ACTION || 'all';
+        const recipient = process.argv[3] || traveler.address;
+
+        // Initialize IPFS handler with credentials check
+        if (!process.env.PINATA_API_KEY || !process.env.PINATA_API_SECRET) {
+            throw new Error("Pinata credentials not found in environment variables");
+        }
         
-        // Initialize IPFS handler
         const ipfsHandler = new IPFSHandler(
             process.env.PINATA_API_KEY,
             process.env.PINATA_API_SECRET
@@ -140,7 +170,7 @@ async function main() {
                 break;
 
             case 'balance':
-                await checkBalances(travelNFT, travelToken, travelSBT, traveler);
+                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
                 break;
 
             case 'all':
@@ -149,7 +179,7 @@ async function main() {
                 await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.EIFFEL_TOWER, traveler);
                 await mintTokens(travelToken, 100, traveler);
                 await mintSBT(travelSBT, 1, traveler);
-                await checkBalances(travelNFT, travelToken, travelSBT, traveler);
+                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
                 break;
 
             default:
@@ -157,14 +187,15 @@ async function main() {
         }
 
     } catch (error) {
-        console.error("Error:", error.message);
+        console.error("Error in main:", error);
         if (error.response) {
             console.error("Response data:", error.response.data);
         }
+        process.exitCode = 1;
     }
 }
 
 main().catch((error) => {
-    console.error(error);
+    console.error("Unhandled error:", error);
     process.exitCode = 1;
 }); 

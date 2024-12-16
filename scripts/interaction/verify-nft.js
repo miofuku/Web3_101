@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const axios = require('axios');
 const { getContractAddress } = require('../utils/contracts');
 require('dotenv').config();
 
@@ -13,52 +14,49 @@ const IPFS_GATEWAYS = [
 async function tryFetchFromGateways(ipfsHash) {
     for (const gateway of IPFS_GATEWAYS) {
         try {
-            const url = `${gateway}${ipfsHash}`;
             console.log(`Trying gateway: ${gateway}`);
-            
-            const response = await axios.get(url, {
-                timeout: 10000, // Increased timeout to 10 seconds
+            const response = await axios.get(`${gateway}${ipfsHash}`, {
+                timeout: 5000,
                 headers: {
                     'Accept': 'application/json',
                     'User-Agent': 'TravelDApp/1.0'
                 }
             });
-            
-            if (response.status === 200) {
-                console.log(`Successfully fetched from ${gateway}`);
-                return response.data;
-            }
+            console.log(`Successfully fetched from ${gateway}`);
+            return response.data;
         } catch (error) {
-            console.log(`Gateway ${gateway} failed:`, error.message);
+            console.log(`Gateway ${gateway} failed: ${error.message}`);
             continue;
         }
     }
-    throw new Error("All gateways failed");
+    throw new Error("All IPFS gateways failed");
 }
 
 async function verifyNFTs(travelNFT, address) {
-    console.log("NFT balance for", address, ":", (await travelNFT.balanceOf(address)).toString());
+    const balance = await travelNFT.balanceOf(address);
+    console.log("NFT balance for", address, ":", balance.toString());
 
-    if ((await travelNFT.balanceOf(address)).toString() === "0") {
+    if (balance.toString() === "0") {
         console.log("No NFTs found for this address");
         return;
     }
 
-    let foundTokens = 0;
     console.log("\nFinding all tokens owned by address...");
-    
-    // Only check up to the number of tokens owned
-    for (let i = 1; foundTokens < parseInt((await travelNFT.balanceOf(address)).toString()); i++) {
+    let foundTokens = 0;
+    let maxTokenId = 10; // Reasonable limit
+
+    for (let tokenId = 1; foundTokens < parseInt(balance.toString()) && tokenId <= maxTokenId; tokenId++) {
         try {
-            const owner = await travelNFT.ownerOf(i);
-            if (owner.toLowerCase() === address.toLowerCase()) {
+            const owner = await travelNFT.ownerOf(tokenId);
+            if (owner.toLowerCase() === address.toString().toLowerCase()) {
                 foundTokens++;
-                console.log(`\nFound token ID ${i} owned by address`);
-                const tokenURI = await travelNFT.tokenURI(i);
+                console.log(`\nFound token ID ${tokenId} owned by address`);
+                
+                const tokenURI = await travelNFT.tokenURI(tokenId);
                 console.log("Token URI:", tokenURI);
 
                 if (tokenURI === "ipfs://QmExample") {
-                    console.log("This token has a placeholder URI. Checking next token...");
+                    console.log("This token has a placeholder URI.");
                     continue;
                 }
 
@@ -77,13 +75,8 @@ async function verifyNFTs(travelNFT, address) {
                 }
             }
         } catch (error) {
-            if (!error.message.includes("nonexistent token") && 
-                !error.message.includes("VM Exception")) {
-                console.error(`Error checking token ${i}:`, error.message);
-            }
-            if (i > 100) {
-                console.log("\nStopping search after checking 100 token IDs");
-                break;
+            if (!error.message.includes("nonexistent token")) {
+                console.error(`Error checking token ${tokenId}:`, error.message);
             }
         }
     }
