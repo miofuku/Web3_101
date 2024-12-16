@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { CONTRACT_ADDRESSES } = require('../utils/contracts');
+const { CONTRACT_ADDRESSES } = require('./contracts');
 
 async function prepareDirectory(dir) {
     if (!fs.existsSync(dir)) {
