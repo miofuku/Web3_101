@@ -10,10 +10,15 @@ class IPFSHandler {
         this.endpoint = 'https://api.pinata.cloud';
     }
 
-    async uploadFile(filePath) {
+    async uploadFile(filePath, name) {
         try {
             const formData = new FormData();
             formData.append('file', fs.createReadStream(filePath));
+
+            const metadata = JSON.stringify({
+                name: name || path.basename(filePath)
+            });
+            formData.append('pinataMetadata', metadata);
 
             const response = await axios.post(`${this.endpoint}/pinning/pinFileToIPFS`, formData, {
                 headers: {
@@ -33,15 +38,25 @@ class IPFSHandler {
         }
     }
 
-    async uploadJSON(jsonData) {
+    async uploadJSON(jsonData, name) {
         try {
-            const response = await axios.post(`${this.endpoint}/pinning/pinJSONToIPFS`, jsonData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'pinata_api_key': this.apiKey,
-                    'pinata_secret_api_key': this.apiSecret
+            const options = {
+                pinataMetadata: {
+                    name: name
                 }
-            });
+            };
+
+            const response = await axios.post(
+                `${this.endpoint}/pinning/pinJSONToIPFS`,
+                { ...jsonData, ...options },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'pinata_api_key': this.apiKey,
+                        'pinata_secret_api_key': this.apiSecret
+                    }
+                }
+            );
 
             return `ipfs://${response.data.IpfsHash}`;
         } catch (error) {
@@ -56,7 +71,8 @@ class IPFSHandler {
     async createLocationNFTMetadata(name, country, coordinates, imagePath) {
         try {
             console.log("Uploading image...");
-            const imageURI = await this.uploadFile(imagePath);
+            const imageFileName = `${name.toLowerCase().replace(/\s+/g, '-')}-image`;
+            const imageURI = await this.uploadFile(imagePath, imageFileName);
             console.log("Image uploaded, URI:", imageURI);
 
             const metadata = {
@@ -80,7 +96,8 @@ class IPFSHandler {
             };
 
             console.log("Uploading metadata...");
-            const tokenURI = await this.uploadJSON(metadata);
+            const metadataFileName = `${name.toLowerCase().replace(/\s+/g, '-')}-metadata`;
+            const tokenURI = await this.uploadJSON(metadata, metadataFileName);
             console.log("Metadata uploaded, URI:", tokenURI);
 
             return tokenURI;
