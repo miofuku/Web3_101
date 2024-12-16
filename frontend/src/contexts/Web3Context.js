@@ -16,10 +16,14 @@ export const Web3Provider = ({ children }) => {
 
     useEffect(() => {
         const init = async () => {
+            console.log('Initializing Web3Provider...');
             const ethProvider = await detectEthereumProvider();
             if (ethProvider) {
+                console.log('Ethereum provider detected');
                 const provider = new ethers.BrowserProvider(window.ethereum);
                 setProvider(provider);
+            } else {
+                console.log('No Ethereum provider detected');
             }
         };
 

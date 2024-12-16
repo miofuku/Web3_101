@@ -8,4 +8,7 @@ root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-); 
+);
+
+// Add this for debugging
+console.log('React app is mounting...'); 
