@@ -2,17 +2,15 @@ import axios from 'axios';
 import config from '../config';
 
 const IPFS_GATEWAYS = [
-    "https://nftstorage.link/ipfs/",
-    "https://ipfs.filebase.io/ipfs/",
     "https://gateway.pinata.cloud/ipfs/",
-    "https://ipfs.infura.io/ipfs/",
-    "https://dweb.link/ipfs/"
+    "https://dweb.link/ipfs/",
+    "https://cloudflare-ipfs.com/ipfs/"
 ];
 
 // Simple functions for frontend use
 export const parseIPFSHash = (ipfsUrl) => ipfsUrl.replace('ipfs://', '');
 
-export const getIPFSUrl = (ipfsHash, gateway = config.ipfsGateway) => {
+export const getIPFSUrl = (ipfsHash, gateway = IPFS_GATEWAYS[0]) => {
     const hash = parseIPFSHash(ipfsHash);
     return `${gateway}${hash}`;
 };
@@ -23,15 +21,19 @@ export const fetchIPFSMetadata = async (ipfsHash) => {
     for (const gateway of IPFS_GATEWAYS) {
         try {
             const url = `${gateway}${hash}`;
+            console.log(`Trying gateway: ${gateway}`);
+            
             const response = await axios.get(url, {
-                timeout: 5000,
+                timeout: 10000,
                 headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'TravelDApp/1.0'
+                    'Accept': 'application/json'
                 }
             });
-            console.log(`Successfully fetched from ${gateway}`);
-            return response.data;
+            
+            if (response.status === 200 && response.data) {
+                console.log(`Successfully fetched from ${gateway}`);
+                return response.data;
+            }
         } catch (error) {
             console.log(`Gateway ${gateway} failed:`, error.message);
             continue;

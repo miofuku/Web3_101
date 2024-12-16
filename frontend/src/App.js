@@ -16,17 +16,17 @@ function App() {
                     <WalletConnection />
                     <div className="dapp-content">
                         <p className="welcome-message">
-                            Welcome to Travel DApp! Connect your wallet to view your travel tokens and NFTs.
+                            <Web3Context.Consumer>
+                                {({ isConnected }) => 
+                                    isConnected 
+                                        ? "Your Travel Tokens and NFTs:" 
+                                        : "Viewing in read-only mode. Connect wallet to interact."
+                                }
+                            </Web3Context.Consumer>
                         </p>
-                        <Web3Context.Consumer>
-                            {({ isConnected }) => isConnected ? (
-                                <>
-                                    <TokenBalance />
-                                    <NFTGallery />
-                                    <SBTGallery />
-                                </>
-                            ) : null}
-                        </Web3Context.Consumer>
+                        <TokenBalance />
+                        <NFTGallery />
+                        <SBTGallery />
                     </div>
                 </ErrorBoundary>
             </div>

@@ -4,8 +4,8 @@ export default {
   "networkId": 1337,
   "networkName": "Ganache",
   "contracts": {
-    "TravelNFT": "0x374C64b3f9C5233AD118F717E4ac8EB37e06DA52",
-    "TravelToken": "0x2c9882d9b980F9C5ff81eCA9B926d5645F1936F3",
-    "TravelSBT": "0x787F13700f81D1060Bb6295910B7E6A7FD0Ca4D0"
+    "TravelNFT": "0x11eA2A1a772C18b203E84a2e7cC2AD42b3aFb613",
+    "TravelToken": "0x1cBfF9602E01F75D43244eE3E88864362c052a84",
+    "TravelSBT": "0x936b7b8d2039F4191d6A969e9aA3Da7159df1dca"
   }
 };

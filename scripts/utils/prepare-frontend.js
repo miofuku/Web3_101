@@ -1,34 +1,43 @@
 const fs = require('fs');
 const path = require('path');
-const { CONTRACT_ADDRESSES } = require('./contracts');
-
-async function prepareDirectory(dir) {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-}
+require('dotenv').config();
 
 async function main() {
     const environment = process.env.NODE_ENV || 'development';
     console.log(`Preparing frontend files for ${environment} environment...`);
 
-    // Create contracts directory in frontend
+    // Get addresses from environment variables
+    const addresses = {
+        TravelNFT: process.env.TRAVEL_NFT_ADDRESS,
+        TravelToken: process.env.TRAVEL_TOKEN_ADDRESS,
+        TravelSBT: process.env.TRAVEL_SBT_ADDRESS
+    };
+
+    // Verify addresses exist
+    Object.entries(addresses).forEach(([name, address]) => {
+        if (!address) {
+            throw new Error(`Missing address for ${name} in environment variables`);
+        }
+        console.log(`${name} address: ${address}`);
+    });
+
+    // Create frontend directory
     const frontendDir = path.join(__dirname, "../../frontend");
     const contractsDir = path.join(frontendDir, "src", "contracts");
-    await prepareDirectory(contractsDir);
 
-    // Write contract addresses
+    if (!fs.existsSync(contractsDir)) {
+        fs.mkdirSync(contractsDir, { recursive: true });
+    }
+
+    // Write contract addresses only to src/contracts
     const addressesPath = path.join(contractsDir, "addresses.json");
     fs.writeFileSync(
         addressesPath,
-        JSON.stringify({ 
-            ...CONTRACT_ADDRESSES,
-            environment 
-        }, null, 2)
+        JSON.stringify(addresses, null, 2)
     );
     console.log("Contract addresses written to:", addressesPath);
 
-    // Copy contract ABIs from the correct artifacts location
+    // Copy contract ABIs
     const artifacts = ["TravelNFT", "TravelToken", "TravelSBT"];
     for (const artifact of artifacts) {
         try {
@@ -50,17 +59,19 @@ async function main() {
         }
     }
 
-    // Create environment-specific config
+    // Write config
     const configDir = path.join(frontendDir, "src", "config");
-    await prepareDirectory(configDir);
-    
+    if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+    }
+
     const configPath = path.join(configDir, "index.js");
     const config = {
         environment,
-        ipfsGateway: "https://nftstorage.link/ipfs/",
+        ipfsGateway: "https://gateway.pinata.cloud/ipfs/",
         networkId: environment === 'development' ? 1337 : 1,
         networkName: environment === 'development' ? 'Ganache' : 'Ethereum Mainnet',
-        contracts: CONTRACT_ADDRESSES
+        contracts: addresses
     };
 
     fs.writeFileSync(
@@ -68,8 +79,6 @@ async function main() {
         `export default ${JSON.stringify(config, null, 2)};`
     );
     console.log("Frontend configuration written to:", configPath);
-
-    console.log("Frontend files prepared successfully!");
 }
 
 main().catch((error) => {
