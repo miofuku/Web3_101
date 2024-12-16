@@ -21,8 +21,10 @@
   "dependencies": {
     "@metamask/detect-provider": "^2.0.0",
     "@pinata/sdk": "^2.1.0",
-    "axios": "^1.7.9",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
     "ethers": "^6.7.0",
-    "ipfs-http-client": "^57.0.3"
+    "form-data": "^4.0.0",
+    "hardhat": "^2.19.1"
   }
 }

@@ -3,6 +3,8 @@ import { Web3Provider } from './contexts/Web3Context';
 import NFTGallery from './components/NFTGallery';
 import TokenBalance from './components/TokenBalance';
 import SBTGallery from './components/SBTGallery';
+import ErrorBoundary from './components/ErrorBoundary';
+import './styles/index.css';
 
 function App() {
     return (

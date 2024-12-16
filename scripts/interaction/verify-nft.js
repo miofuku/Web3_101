@@ -1,6 +1,6 @@
 const hre = require("hardhat");
-const axios = require('axios');
-const { getContractAddress } = require('../../utils/contracts');
+const { getContractAddress } = require('../utils/contracts');
+require('dotenv').config();
 
 const IPFS_GATEWAYS = [
     "https://nftstorage.link/ipfs/",      // NFT.Storage gateway (most reliable)

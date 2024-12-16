@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
 import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
+import { useNFTs } from '../hooks';
+import { getIPFSUrl } from '../utils';
 
 const NFTGallery = () => {
     const { contracts, account } = useContext(Web3Context);
