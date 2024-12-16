@@ -47,18 +47,18 @@ async function mintNFTWithMetadata(travelNFT, ipfsHandler, location, traveler) {
 }
 
 async function mintTokens(travelToken, amount, recipient) {
-    console.log(`\nMinting ${amount} tokens for ${recipient}...`);
+    console.log(`\nMinting ${amount} tokens for ${recipient.address}...`);
     const rewardAmount = hre.ethers.parseEther(amount.toString());
-    const rewardTx = await travelToken.rewardForVisit(recipient, rewardAmount);
+    const rewardTx = await travelToken.rewardForVisit(recipient.address, rewardAmount);
     await rewardTx.wait();
-    console.log(`Rewarded ${amount} tokens to ${recipient}`);
+    console.log(`Rewarded ${amount} tokens to ${recipient.address}`);
 }
 
 async function mintSBT(travelSBT, milestoneType, recipient) {
-    console.log(`\nMinting SBT type ${milestoneType} for ${recipient}...`);
-    const sbtTx = await travelSBT.mintMilestoneSBT(recipient, milestoneType);
+    console.log(`\nMinting SBT type ${milestoneType} for ${recipient.address}...`);
+    const sbtTx = await travelSBT.mintMilestoneSBT(recipient.address, milestoneType);
     await sbtTx.wait();
-    console.log(`Minted SBT type ${milestoneType} for ${recipient}`);
+    console.log(`Minted SBT type ${milestoneType} for ${recipient.address}`);
 }
 
 async function checkBalances(travelNFT, travelToken, travelSBT, address) {
@@ -72,15 +72,26 @@ async function checkBalances(travelNFT, travelToken, travelSBT, address) {
     console.log("Tokens:", hre.ethers.formatEther(tokenBalance));
     console.log("SBTs:", sbtBalance.toString());
 
-    // Print NFT details
+    // Print NFT details - using sequential token ID check
     console.log("\nNFT Details:");
-    for (let i = 1; i <= nftBalance; i++) {
+    let foundTokens = 0;
+    for (let tokenId = 1; foundTokens < parseInt(nftBalance.toString()); tokenId++) {
         try {
-            const tokenId = await travelNFT.tokenOfOwnerByIndex(address, i - 1);
-            const uri = await travelNFT.tokenURI(tokenId);
-            console.log(`Token ID ${tokenId}: ${uri}`);
+            const owner = await travelNFT.ownerOf(tokenId);
+            if (owner.toLowerCase() === address.toLowerCase()) {
+                foundTokens++;
+                const uri = await travelNFT.tokenURI(tokenId);
+                console.log(`Token ID ${tokenId}: ${uri}`);
+            }
         } catch (error) {
-            console.error(`Error fetching token ${i}:`, error.message);
+            if (!error.message.includes("nonexistent token")) {
+                console.error(`Error checking token ${tokenId}:`, error.message);
+            }
+            // Stop checking if we've gone too far without finding all tokens
+            if (tokenId > 100) {
+                console.log("Stopping search after checking 100 token IDs");
+                break;
+            }
         }
     }
 }
@@ -103,10 +114,9 @@ async function main() {
     console.log("SBT:", await travelSBT.getAddress());
 
     try {
-        // Get command line arguments
-        const action = process.argv[2] || 'all';
-        const recipient = process.argv[3] || traveler.address;
-
+        // Get action from environment variable or default to 'all'
+        const action = process.env.ACTION || 'all';
+        
         // Initialize IPFS handler
         const ipfsHandler = new IPFSHandler(
             process.env.PINATA_API_KEY,
@@ -115,31 +125,31 @@ async function main() {
 
         switch (action.toLowerCase()) {
             case 'mintnft':
-                const location = process.argv[4] || 'MOUNT_FUJI';
-                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS[location], recipient);
+                const location = process.env.LOCATION || 'MOUNT_FUJI';
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS[location], traveler);
                 break;
 
             case 'minttoken':
-                const amount = process.argv[4] || 100;
-                await mintTokens(travelToken, amount, recipient);
+                const amount = process.env.AMOUNT || 100;
+                await mintTokens(travelToken, amount, traveler);
                 break;
 
             case 'mintsbt':
-                const milestoneType = process.argv[4] || 1;
-                await mintSBT(travelSBT, milestoneType, recipient);
+                const milestoneType = process.env.MILESTONE_TYPE || 1;
+                await mintSBT(travelSBT, milestoneType, traveler);
                 break;
 
             case 'balance':
-                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
+                await checkBalances(travelNFT, travelToken, travelSBT, traveler);
                 break;
 
             case 'all':
                 // Mint NFTs for different locations
-                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.MOUNT_FUJI, recipient);
-                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.EIFFEL_TOWER, recipient);
-                await mintTokens(travelToken, 100, recipient);
-                await mintSBT(travelSBT, 1, recipient);
-                await checkBalances(travelNFT, travelToken, travelSBT, recipient);
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.MOUNT_FUJI, traveler);
+                await mintNFTWithMetadata(travelNFT, ipfsHandler, LOCATIONS.EIFFEL_TOWER, traveler);
+                await mintTokens(travelToken, 100, traveler);
+                await mintSBT(travelSBT, 1, traveler);
+                await checkBalances(travelNFT, travelToken, travelSBT, traveler);
                 break;
 
             default:

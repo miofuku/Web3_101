@@ -30,38 +30,32 @@ npx hardhat run scripts/deploy.js --network ganache
 ## Interaction Commands
 
 ### NFT Operations
-- Mint NFT
-```
-npx hardhat run scripts/interact.js --network ganache mintnft [recipient_address] [MOUNT_FUJI|EIFFEL_TOWER]
-```
+```bash
+# Mint NFT
+ACTION=mintnft npx hardhat run scripts/interact.js --network ganache
 
-- Verify NFTs
-```
+# Verify NFTs
 npx hardhat run scripts/verify-nft.js --network ganache token [tokenId]
 npx hardhat run scripts/verify-nft.js --network ganache address [address]
 npx hardhat run scripts/verify-nft.js --network ganache all
 ```
 
 ### Token Operations
-- Mint Tokens
-```
-npx hardhat run scripts/interact.js --network ganache minttoken [recipient_address] [amount]
-```
+```bash
+# Mint tokens
+ACTION=minttoken npx hardhat run scripts/interact.js --network ganache
 
-- Mint SBT
-```
-npx hardhat run scripts/interact.js --network ganache mintsbt [recipient_address] [milestone_type]
-```
+# Mint SBT
+ACTION=mintsbt npx hardhat run scripts/interact.js --network ganache
 
-- Check Balances
-```
-npx hardhat run scripts/interact.js --network ganache balance [address]
+# Check balances
+ACTION=balance npx hardhat run scripts/interact.js --network ganache
 ```
 
 ### Run All Operations
- - Mint NFT, tokens, and SBT
-```
-npx hardhat run scripts/interact.js --network ganache all [recipient_address]
+```bash
+# Mint NFT, tokens, and SBT
+ACTION=all npx hardhat run scripts/interact.js --network ganache
 ```
 
 ## Frontend Preparation
