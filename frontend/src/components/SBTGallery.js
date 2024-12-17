@@ -4,20 +4,16 @@ import { Web3Context } from '../contexts/Web3Context';
 const MAX_TOKEN_ID = 10;
 
 const SBTGallery = () => {
-    const { contracts } = useContext(Web3Context);
+    const { web3Service } = useContext(Web3Context);
     const [sbts, setSbts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const loadSBTs = async () => {
-            if (!contracts || !contracts.travelSBT) {
-                console.log('Waiting for contract initialization...');
-                return;
-            }
-
+            if (!web3Service?.contracts?.TravelSBT) return;
             try {
-                const sbtAddress = await contracts.travelSBT.getAddress();
+                const sbtAddress = await web3Service.contracts.TravelSBT.getAddress();
                 console.log('SBT contract verified at:', sbtAddress);
 
                 console.log('Starting to load SBTs...');
@@ -26,7 +22,7 @@ const SBTGallery = () => {
                 for (let tokenId = 1; tokenId <= MAX_TOKEN_ID; tokenId++) {
                     try {
                         console.log(`Checking SBT ${tokenId}...`);
-                        const owner = await contracts.travelSBT.ownerOf(tokenId);
+                        const owner = await web3Service.contracts.TravelSBT.ownerOf(tokenId);
                         console.log(`Found SBT ${tokenId} owned by ${owner}`);
                         
                         // Add the SBT data without trying to get the type
@@ -55,7 +51,7 @@ const SBTGallery = () => {
         };
 
         loadSBTs();
-    }, [contracts]);
+    }, [web3Service]);
 
     if (loading) return <div className="loading">Loading achievements...</div>;
     if (error) return <div className="error">{error}</div>;

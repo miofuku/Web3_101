@@ -1,9 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
-import { ethers } from 'ethers';
 
 const MintActions = () => {
-    const { contracts, account } = useContext(Web3Context);
+    const { web3Service } = useContext(Web3Context);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -12,10 +11,8 @@ const MintActions = () => {
         setLoading(true);
         setError(null);
         try {
-            console.log('Minting tokens for:', account);
-            const amount = ethers.parseEther("100");
-            const tx = await contracts.travelToken.rewardForVisit(account, amount);
-            await tx.wait();
+            const address = await web3Service.getAddress();
+            await web3Service.mintTokens(address, 100);
             setSuccess("Successfully minted 100 TRAVEL tokens!");
         } catch (error) {
             console.error('Mint token error:', error);
@@ -29,9 +26,8 @@ const MintActions = () => {
         setLoading(true);
         setError(null);
         try {
-            console.log('Minting SBT for:', account);
-            const tx = await contracts.travelSBT.mintMilestoneSBT(account, 1);
-            await tx.wait();
+            const address = await web3Service.getAddress();
+            await web3Service.mintSBT(address, 1);
             setSuccess("Successfully minted Travel Achievement Badge!");
         } catch (error) {
             console.error('Mint SBT error:', error);

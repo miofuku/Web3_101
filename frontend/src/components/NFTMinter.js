@@ -1,10 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
-import { uploadToIPFS, getIPFSUrl } from '../utils/ipfs';
+import { uploadToIPFS } from '../utils/ipfs';
 import { LOCATIONS, getImagePath } from '../config/locations';
 
 const NFTMinter = () => {
-    const { contracts, account } = useContext(Web3Context);
+    const { web3Service } = useContext(Web3Context);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -62,15 +62,14 @@ const NFTMinter = () => {
                 // Upload to IPFS
                 const tokenURI = await uploadToIPFS(formData);
                 
-                // Mint NFT
-                const tx = await contracts.travelNFT.mintLocationNFT(
-                    account,
+                // Use Web3Service to mint NFT
+                const tx = await web3Service.mintNFT([
                     location.name,
                     location.country,
                     location.coordinates,
                     tokenURI,
-                    0
-                );
+                    0 // NFTType.COLLECTIBLE
+                ]);
                 const receipt = await tx.wait();
                 
                 newMintedNFTs.push({

@@ -2,28 +2,27 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
 import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
 
-const MAX_TOKENS_TO_CHECK = 10; // Limit the number of tokens to check
+const MAX_TOKENS_TO_CHECK = 10;
 
 const NFTGallery = () => {
-    const { contracts } = useContext(Web3Context);
+    const { web3Service } = useContext(Web3Context);
     const [nfts, setNfts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const loadNFTs = async () => {
-            if (!contracts.travelNFT) return;
+            if (!web3Service?.contracts?.TravelNFT) return;
             try {
                 const nftData = [];
                 const promises = [];
 
-                // Create array of promises for parallel execution
                 for (let tokenId = 1; tokenId <= MAX_TOKENS_TO_CHECK; tokenId++) {
                     promises.push(
                         (async () => {
                             try {
-                                const owner = await contracts.travelNFT.ownerOf(tokenId);
-                                const tokenURI = await contracts.travelNFT.tokenURI(tokenId);
+                                const owner = await web3Service.contracts.TravelNFT.ownerOf(tokenId);
+                                const tokenURI = await web3Service.contracts.TravelNFT.tokenURI(tokenId);
                                 const metadata = await fetchIPFSMetadata(tokenURI);
                                 
                                 return {
@@ -42,10 +41,7 @@ const NFTGallery = () => {
                     );
                 }
 
-                // Wait for all promises to resolve
                 const results = await Promise.all(promises);
-                
-                // Filter out null results and sort by tokenId
                 const validNFTs = results
                     .filter(result => result !== null)
                     .sort((a, b) => a.tokenId - b.tokenId);
@@ -60,7 +56,7 @@ const NFTGallery = () => {
         };
 
         loadNFTs();
-    }, [contracts.travelNFT]);
+    }, [web3Service]);
 
     if (loading) return (
         <div className="nft-gallery">

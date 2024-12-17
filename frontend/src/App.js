@@ -1,5 +1,5 @@
 import React from 'react';
-import { Web3Provider, Web3Context } from './contexts/Web3Context';
+import { Web3Provider } from './contexts/Web3Context';
 import WalletConnection from './components/WalletConnection';
 import NFTGallery from './components/NFTGallery';
 import TokenBalance from './components/TokenBalance';
