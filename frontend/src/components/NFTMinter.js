@@ -113,23 +113,32 @@ const NFTMinter = () => {
 
     if (mintedNFTs.length > 0) {
         return (
-            <div className="nft-minter">
+            <div className="nft-minter success-view">
                 <h2>Successfully Minted NFTs!</h2>
-                <div className="minted-nfts">
-                    {mintedNFTs.map((nft, index) => (
-                        <div key={index} className="minted-nft-card">
-                            <img 
-                                src={getIPFSUrl(nft.location.imagePath)} 
-                                alt={nft.location.name} 
-                                onError={(e) => {
-                                    e.target.src = nft.location.imagePath; // Fallback to local path
-                                }}
-                            />
-                            <h3>{nft.location.name}</h3>
-                            <p>{nft.location.country}</p>
-                            <p className="coordinates">{nft.location.coordinates}</p>
-                        </div>
-                    ))}
+                <div className="minted-nfts-showcase">
+                    {mintedNFTs.map((nft, index) => {
+                        // Find the location key by matching the name
+                        const locationKey = Object.keys(LOCATIONS).find(
+                            key => LOCATIONS[key].name === nft.location.name
+                        );
+                        
+                        return (
+                            <div key={index} className="minted-nft-card">
+                                <img 
+                                    src={locationKey ? getImagePath(locationKey) : nft.location.imagePath} 
+                                    alt={nft.location.name}
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', e);
+                                        e.target.src = '/assets/placeholder.jpeg';
+                                    }}
+                                />
+                                <div className="nft-info">
+                                    <h3>{nft.location.name}</h3>
+                                    <p>{nft.location.country}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
                 <button onClick={resetForm} className="reset-button">
                     Mint More NFTs

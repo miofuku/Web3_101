@@ -2,43 +2,58 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
 import { fetchIPFSMetadata, getIPFSUrl } from '../utils/ipfs';
 
-const MAX_TOKEN_ID = 100; // Reasonable limit for searching tokens
+const MAX_TOKENS_TO_CHECK = 10; // Limit the number of tokens to check
 
 const NFTGallery = () => {
     const { contracts } = useContext(Web3Context);
     const [nfts, setNfts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const loadNFTs = async () => {
             if (!contracts.travelNFT) return;
             try {
                 const nftData = [];
-                // Try tokens up to MAX_TOKEN_ID
-                for (let tokenId = 1; tokenId <= MAX_TOKEN_ID; tokenId++) {
-                    try {
-                        const owner = await contracts.travelNFT.ownerOf(tokenId);
-                        const tokenURI = await contracts.travelNFT.tokenURI(tokenId);
-                        
-                        if (tokenURI && !tokenURI.includes("QmExample")) {
-                            const metadata = await fetchIPFSMetadata(tokenURI);
-                            nftData.push({
-                                tokenId,
-                                metadata,
-                                imageUrl: getIPFSUrl(metadata.image),
-                                owner
-                            });
-                        }
-                    } catch (error) {
-                        // Silently skip nonexistent tokens
-                        if (!error.message.includes("nonexistent token")) {
-                            console.error(`Error loading NFT ${tokenId}:`, error);
-                        }
-                    }
+                const promises = [];
+
+                // Create array of promises for parallel execution
+                for (let tokenId = 1; tokenId <= MAX_TOKENS_TO_CHECK; tokenId++) {
+                    promises.push(
+                        (async () => {
+                            try {
+                                const owner = await contracts.travelNFT.ownerOf(tokenId);
+                                const tokenURI = await contracts.travelNFT.tokenURI(tokenId);
+                                const metadata = await fetchIPFSMetadata(tokenURI);
+                                
+                                return {
+                                    tokenId,
+                                    metadata,
+                                    imageUrl: getIPFSUrl(metadata.image),
+                                    owner
+                                };
+                            } catch (error) {
+                                if (!error.message.includes("nonexistent token")) {
+                                    console.error(`Error loading NFT ${tokenId}:`, error);
+                                }
+                                return null;
+                            }
+                        })()
+                    );
                 }
-                setNfts(nftData);
+
+                // Wait for all promises to resolve
+                const results = await Promise.all(promises);
+                
+                // Filter out null results and sort by tokenId
+                const validNFTs = results
+                    .filter(result => result !== null)
+                    .sort((a, b) => a.tokenId - b.tokenId);
+
+                setNfts(validNFTs);
             } catch (error) {
                 console.error("Error loading NFTs:", error);
+                setError("Failed to load NFTs. Please try again later.");
             } finally {
                 setLoading(false);
             }
@@ -47,7 +62,22 @@ const NFTGallery = () => {
         loadNFTs();
     }, [contracts.travelNFT]);
 
-    if (loading) return <div className="loading">Loading NFTs...</div>;
+    if (loading) return (
+        <div className="nft-gallery">
+            <h2>Travel NFTs</h2>
+            <div className="loading">
+                <div className="loading-spinner"></div>
+                <p>Loading your NFTs...</p>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="nft-gallery">
+            <h2>Travel NFTs</h2>
+            <div className="error">{error}</div>
+        </div>
+    );
 
     return (
         <div className="nft-gallery">
@@ -58,16 +88,22 @@ const NFTGallery = () => {
                 <div className="nft-grid">
                     {nfts.map((nft) => (
                         <div key={nft.tokenId} className="nft-card">
-                            <img src={nft.imageUrl} alt={nft.metadata.name} />
-                            <h3>{nft.metadata.name}</h3>
-                            <p>{nft.metadata.description}</p>
-                            <p className="owner">Owner: {nft.owner.slice(0, 6)}...{nft.owner.slice(-4)}</p>
-                            {nft.metadata.attributes?.map((attr, index) => (
-                                <div key={index} className="attribute">
-                                    <span>{attr.trait_type}:</span>
-                                    <span>{attr.value}</span>
+                            <div className="nft-content">
+                                <div className="nft-image">
+                                    <img src={nft.imageUrl} alt={nft.metadata.name} />
                                 </div>
-                            ))}
+                                <div className="nft-details">
+                                    <h3>{nft.metadata.name}</h3>
+                                    <div className="metadata">
+                                        {nft.metadata.attributes?.map((attr, index) => (
+                                            <div key={index} className="attribute">
+                                                <span className="label">{attr.trait_type}:</span>
+                                                <span className="value">{attr.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>

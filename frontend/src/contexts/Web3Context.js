@@ -9,12 +9,12 @@ import TravelSBTAbi from '../contracts/TravelSBT.json';
 export const Web3Context = createContext();
 
 // Default Ganache account (first account)
-const DEFAULT_ACCOUNT = '0xE4109f787245469CDb5b1EC4aAe2198a03873c9F';
+const DEFAULT_ACCOUNT = '0x76fae410EBA31db7A9F3C258f2967Bc31e6aC468';
 
 export const Web3Provider = ({ children }) => {
     const [provider, setProvider] = useState(null);
     const [contracts, setContracts] = useState({});
-    const [account, setAccount] = useState(DEFAULT_ACCOUNT); // Set default account
+    const [account, setAccount] = useState(DEFAULT_ACCOUNT); 
     const [isConnected, setIsConnected] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
     const initializationCount = useRef(0);

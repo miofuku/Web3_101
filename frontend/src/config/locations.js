@@ -12,6 +12,20 @@ export const LOCATIONS = {
         coordinates: "48.8584° N, 2.2945° E",
         imagePath: "/assets/eiffel-tower.jpeg",
         description: "The most famous symbol of Paris and France"
+    },
+    GREAT_WALL: {
+        name: "Great Wall",
+        country: "China",
+        coordinates: "40.4319° N, 116.5704° E",
+        imagePath: "/assets/great-wall.jpeg",
+        description: "The longest wall in the world, a UNESCO World Heritage site"
+    },
+    EGYPTIAN_PYRAMID: {
+        name: "Great Pyramid of Giza",
+        country: "Egypt",
+        coordinates: "29.9792° N, 31.1342° E",
+        imagePath: "/assets/egyptian-pyramid.jpeg",
+        description: "The oldest and largest of the three pyramids in the Giza pyramid complex"
     }
 };
 
