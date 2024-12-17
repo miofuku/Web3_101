@@ -8,10 +8,13 @@ import TravelSBTAbi from '../contracts/TravelSBT.json';
 
 export const Web3Context = createContext();
 
+// Default Ganache account (first account)
+const DEFAULT_ACCOUNT = '0xE4109f787245469CDb5b1EC4aAe2198a03873c9F';
+
 export const Web3Provider = ({ children }) => {
     const [provider, setProvider] = useState(null);
     const [contracts, setContracts] = useState({});
-    const [account, setAccount] = useState(null);
+    const [account, setAccount] = useState(DEFAULT_ACCOUNT); // Set default account
     const [isConnected, setIsConnected] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
     const initializationCount = useRef(0);
@@ -25,24 +28,28 @@ export const Web3Provider = ({ children }) => {
             initializationCount.current += 1;
             console.log('Initializing contracts with addresses:', addresses);
 
+            // Get the default signer from Ganache
+            const signer = await provider.getSigner(DEFAULT_ACCOUNT);
+
             const initializedContracts = {
                 travelNFT: new ethers.Contract(
                     addresses.TravelNFT,
                     TravelNFTAbi,
-                    provider
+                    signer  // Use signer instead of provider for write operations
                 ),
                 travelToken: new ethers.Contract(
                     addresses.TravelToken,
                     TravelTokenAbi,
-                    provider
+                    signer
                 ),
                 travelSBT: new ethers.Contract(
                     addresses.TravelSBT,
                     TravelSBTAbi,
-                    provider
+                    signer
                 )
             };
 
+            // Verify contracts are initialized
             await Promise.all([
                 initializedContracts.travelNFT.getAddress(),
                 initializedContracts.travelToken.getAddress(),
@@ -92,8 +99,8 @@ export const Web3Provider = ({ children }) => {
             setAccount(accounts[0]);
             setIsConnected(true);
 
-            // Update contracts with signer
-            const initializedContracts = await initializeContracts(signer);
+            // Update contracts with new signer
+            const initializedContracts = await initializeContracts(provider);
             if (initializedContracts) {
                 setContracts(initializedContracts);
             }
@@ -104,9 +111,9 @@ export const Web3Provider = ({ children }) => {
     };
 
     const disconnectWallet = () => {
-        setAccount(null);
+        setAccount(DEFAULT_ACCOUNT);  // Reset to default account
         setIsConnected(false);
-        // Reinitialize with read-only provider
+        // Reinitialize with default signer
         init();
     };
 

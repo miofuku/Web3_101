@@ -4,6 +4,8 @@ import WalletConnection from './components/WalletConnection';
 import NFTGallery from './components/NFTGallery';
 import TokenBalance from './components/TokenBalance';
 import SBTGallery from './components/SBTGallery';
+import MintActions from './components/MintActions';
+import NFTMinter from './components/NFTMinter';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/index.css';
 
@@ -15,18 +17,15 @@ function App() {
                 <ErrorBoundary>
                     <WalletConnection />
                     <div className="dapp-content">
-                        <p className="welcome-message">
-                            <Web3Context.Consumer>
-                                {({ isConnected }) => 
-                                    isConnected 
-                                        ? "Your Travel Tokens and NFTs:" 
-                                        : "Viewing in read-only mode. Connect wallet to interact."
-                                }
-                            </Web3Context.Consumer>
-                        </p>
-                        <TokenBalance />
-                        <NFTGallery />
-                        <SBTGallery />
+                        <div className="interaction-section">
+                            <MintActions />
+                            <NFTMinter />
+                        </div>
+                        <div className="display-section">
+                            <TokenBalance />
+                            <NFTGallery />
+                            <SBTGallery />
+                        </div>
                     </div>
                 </ErrorBoundary>
             </div>

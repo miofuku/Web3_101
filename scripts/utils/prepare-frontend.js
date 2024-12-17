@@ -79,6 +79,16 @@ async function main() {
         `export default ${JSON.stringify(config, null, 2)};`
     );
     console.log("Frontend configuration written to:", configPath);
+
+    // Copy Pinata credentials to frontend .env
+    const frontendEnvPath = path.join(frontendDir, '.env');
+    const envContent = `
+REACT_APP_PINATA_API_KEY=${process.env.PINATA_API_KEY}
+REACT_APP_PINATA_API_SECRET=${process.env.PINATA_API_SECRET}
+    `.trim();
+    
+    fs.writeFileSync(frontendEnvPath, envContent + '\n');
+    console.log("Frontend environment variables written to:", frontendEnvPath);
 }
 
 main().catch((error) => {
