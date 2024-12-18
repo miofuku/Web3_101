@@ -33,18 +33,28 @@ async function main() {
     // Copy ABIs
     const artifacts = ["TravelNFT", "TravelToken", "TravelSBT"];
     for (const artifact of artifacts) {
-        const artifactPath = path.join(
-            __dirname,
-            "../../artifacts/contracts",
-            `${artifact}.sol`,
-            `${artifact}.json`
-        );
-        
-        const artifactData = require(artifactPath);
-        fs.writeFileSync(
-            path.join(contractsDir, `${artifact}.json`),
-            JSON.stringify(artifactData.abi, null, 2)
-        );
+        try {
+            const artifactPath = path.join(
+                __dirname,
+                "../../artifacts/contracts",
+                `${artifact}.sol`,
+                `${artifact}.json`
+            );
+            
+            const artifactData = require(artifactPath);
+            
+            // Log ABI data for verification
+            console.log(`Copying ABI for ${artifact}:`, 
+                artifactData.abi ? 'ABI present' : 'No ABI found');
+            
+            fs.writeFileSync(
+                path.join(contractsDir, `${artifact}.json`),
+                JSON.stringify({ abi: artifactData.abi }, null, 2)
+            );
+            console.log(`Copied ABI for ${artifact}`);
+        } catch (error) {
+            console.error(`Error copying ABI for ${artifact}:`, error.message);
+        }
     }
 
     // Write frontend config

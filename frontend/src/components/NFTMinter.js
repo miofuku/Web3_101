@@ -39,43 +39,30 @@ const NFTMinter = () => {
             for (const locationKey of selectedKeys) {
                 const location = LOCATIONS[locationKey];
                 
-                // Fetch the image file
-                const imageResponse = await fetch(getImagePath(locationKey));
-                const imageBlob = await imageResponse.blob();
-                
-                // Create a File object with proper name
-                const imageFile = new File(
-                    [imageBlob], 
-                    `${location.name.toLowerCase().replace(/\s+/g, '-')}.jpeg`, 
-                    { type: 'image/jpeg' }
-                );
-
                 // Create FormData with location info
                 const formData = {
                     name: location.name,
                     country: location.country,
                     coordinates: location.coordinates,
-                    description: location.description,
-                    image: imageFile
+                    image: await fetch(location.imagePath).then(r => r.blob())
                 };
 
                 // Upload to IPFS
                 const tokenURI = await uploadToIPFS(formData);
                 
-                // Use Web3Service to mint NFT
+                // Mint NFT using mintLocationNFT
                 const tx = await web3Service.mintNFT([
                     location.name,
                     location.country,
                     location.coordinates,
                     tokenURI,
-                    0 // NFTType.COLLECTIBLE
+                    0  // NFTType.COLLECTIBLE
                 ]);
-                const receipt = await tx.wait();
                 
                 newMintedNFTs.push({
                     location,
                     tokenURI,
-                    txHash: receipt.hash
+                    txHash: tx.hash
                 });
             }
             

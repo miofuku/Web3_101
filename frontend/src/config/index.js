@@ -1,12 +1,6 @@
-export * from './chains';
-export * from './locations';
-export * from './ipfs';
-
-export const CONFIG = {
-    defaultChain: 'GANACHE',
-    supportedFeatures: {
-        NFT: true,
-        Token: true,
-        SBT: true
-    }
+export default {
+  "environment": "development",
+  "ipfsGateway": "https://gateway.pinata.cloud/ipfs/",
+  "networkId": 1337,
+  "networkName": "Ganache"
 };

@@ -9,7 +9,7 @@ export const SUPPORTED_CHAINS = {
     },
     ETHEREUM: {
         id: 1,
-        name: 'Ethereum',
+        name: 'Ethereum Mainnet',
         rpcUrl: process.env.REACT_APP_ETH_RPC_URL,
         currency: 'ETH',
         explorer: 'https://etherscan.io',
@@ -23,5 +23,14 @@ export const SUPPORTED_CHAINS = {
         explorer: 'https://polygonscan.com',
         isEVM: true
     }
-    // Add other chains as needed
+};
+
+export const DEFAULT_CHAIN = 'GANACHE';
+
+export const getChainById = (chainId) => {
+    return Object.values(SUPPORTED_CHAINS).find(chain => chain.id === chainId);
+};
+
+export const getChainByName = (name) => {
+    return SUPPORTED_CHAINS[name.toUpperCase()];
 }; 

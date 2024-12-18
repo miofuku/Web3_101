@@ -2,12 +2,17 @@ import React, { useContext, useState } from 'react';
 import { Web3Context } from '../contexts/Web3Context';
 
 const MintActions = () => {
-    const { web3Service } = useContext(Web3Context);
+    const { web3Service, isInitialized } = useContext(Web3Context);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
     const mintToken = async () => {
+        if (!web3Service || !isInitialized) {
+            setError("Web3 not initialized");
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
@@ -23,6 +28,11 @@ const MintActions = () => {
     };
 
     const mintSBT = async () => {
+        if (!web3Service || !isInitialized) {
+            setError("Web3 not initialized");
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {

@@ -4,16 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 
-async function updateEnvFile(contracts) {
+async function updateEnvFile(contracts, network) {
     const envPath = path.join(__dirname, '../../.env');
     let envContent = '';
 
-    // Read existing content if file exists
     if (fs.existsSync(envPath)) {
         envContent = fs.readFileSync(envPath, 'utf8');
     }
 
-    // Update or add each contract address
+    // Update contract addresses
     Object.entries(contracts).forEach(([name, address]) => {
         const varName = `TRAVEL_${name}_ADDRESS`;
         if (envContent.includes(varName)) {
@@ -26,12 +25,24 @@ async function updateEnvFile(contracts) {
         }
     });
 
-    // Write back to .env
+    // Update network
+    if (envContent.includes('DEPLOY_NETWORK=')) {
+        envContent = envContent.replace(
+            /DEPLOY_NETWORK=.*/,
+            `DEPLOY_NETWORK=${network}`
+        );
+    } else {
+        envContent += `\nDEPLOY_NETWORK=${network}`;
+    }
+
     fs.writeFileSync(envPath, envContent.trim() + '\n');
-    console.log('Updated .env file with new contract addresses');
+    console.log(`Updated .env file with new contract addresses for ${network}`);
 }
 
 async function main() {
+    const network = process.env.HARDHAT_NETWORK || 'ganache';
+    console.log(`Deploying to ${network}...`);
+
     // Deploy contracts
     const TravelNFT = await hre.ethers.getContractFactory("TravelNFT");
     const travelNFT = await TravelNFT.deploy();
@@ -52,18 +63,17 @@ async function main() {
         'SBT': await travelSBT.getAddress()
     };
 
-    console.log("Contracts deployed to:");
+    console.log(`Contracts deployed to ${network}:`);
     console.log("TravelNFT:", contracts.NFT);
     console.log("TravelToken:", contracts.TOKEN);
     console.log("TravelSBT:", contracts.SBT);
 
     // Update .env file
-    await updateEnvFile(contracts);
+    await updateEnvFile(contracts, network);
 
     // Run prepare-frontend script
     console.log("\nPreparing frontend files...");
-    return new Promise((resolve, reject) => {
-        // Give the file system a moment to finish writing the .env file
+    await new Promise((resolve, reject) => {
         setTimeout(() => {
             exec('npx hardhat run scripts/utils/prepare-frontend.js', (error, stdout, stderr) => {
                 if (error) {
@@ -71,13 +81,10 @@ async function main() {
                     reject(error);
                     return;
                 }
-                if (stderr) {
-                    console.error(`Frontend preparation stderr: ${stderr}`);
-                }
                 console.log(stdout);
                 resolve();
             });
-        }, 1000); // Wait 1 second before running prepare-frontend
+        }, 1000);
     });
 }
 

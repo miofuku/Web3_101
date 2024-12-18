@@ -32,7 +32,7 @@ const NFTGallery = () => {
                                     owner
                                 };
                             } catch (error) {
-                                if (!error.message.includes("nonexistent token")) {
+                                if (!error.message.includes("ERC721NonexistentToken")) {
                                     console.error(`Error loading NFT ${tokenId}:`, error);
                                 }
                                 return null;
@@ -42,14 +42,11 @@ const NFTGallery = () => {
                 }
 
                 const results = await Promise.all(promises);
-                const validNFTs = results
-                    .filter(result => result !== null)
-                    .sort((a, b) => a.tokenId - b.tokenId);
-
+                const validNFTs = results.filter(result => result !== null);
                 setNfts(validNFTs);
             } catch (error) {
                 console.error("Error loading NFTs:", error);
-                setError("Failed to load NFTs. Please try again later.");
+                setError(error.message);
             } finally {
                 setLoading(false);
             }
