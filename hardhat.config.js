@@ -15,12 +15,16 @@ const formatPrivateKey = (key) => {
 const GANACHE_PRIVATE_KEY = formatPrivateKey(process.env.GANACHE_PRIVATE_KEY);
 const SEPOLIA_PRIVATE_KEY = formatPrivateKey(process.env.PRIVATE_KEY);
 
-if (!SEPOLIA_PRIVATE_KEY) {
-    console.warn('Warning: Sepolia private key not found in .env');
-}
-
 module.exports = {
-    solidity: "0.8.20",
+    solidity: {
+        version: "0.8.20",
+        settings: {
+            optimizer: {
+                enabled: true,
+                runs: 200
+            }
+        }
+    },
     networks: {
         ganache: {
             url: "http://127.0.0.1:7545",
@@ -38,8 +42,9 @@ module.exports = {
             url: process.env.SEPOLIA_RPC_URL,
             chainId: 11155111,
             accounts: SEPOLIA_PRIVATE_KEY ? [SEPOLIA_PRIVATE_KEY] : [],
-            gas: 2100000,
-            gasPrice: 8000000000
+            gas: "auto",
+            gasPrice: "auto",
+            gasMultiplier: 1.2
         }
     },
     etherscan: {

@@ -10,54 +10,82 @@ export class EVMAdapter {
 
     async connect() {
         try {
-            // For Ganache, use JsonRpcProvider
             if (this.chainConfig.name === 'Ganache') {
                 this.provider = new ethers.JsonRpcProvider(this.chainConfig.rpcUrl);
-                
-                // Get signer from provider
-                const signer = await this.provider.getSigner();
-                // Verify signer
-                const address = await signer.getAddress();
-                console.log('Connected to address:', address);
-                
-                this.signer = signer;
+                this.signer = await this.provider.getSigner();
             } else {
-                // For other networks, use the configured provider
-                this.provider = new ethers.JsonRpcProvider(this.chainConfig.rpcUrl);
+                // For Sepolia, use MetaMask
+                if (typeof window.ethereum !== 'undefined') {
+                    // Request account access
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    // Create Web3Provider
+                    this.provider = new ethers.BrowserProvider(window.ethereum);
+                    this.signer = await this.provider.getSigner();
+                    
+                    // Switch to correct network if needed
+                    await this.ensureCorrectNetwork();
+                } else {
+                    throw new Error('Please install MetaMask');
+                }
             }
 
+            const address = await this.signer.getAddress();
+            console.log('Connected to address:', address);
+            
             return this.provider;
         } catch (error) {
-            console.error('Failed to connect to provider:', error);
+            console.error('Failed to connect:', error);
             throw error;
+        }
+    }
+
+    async ensureCorrectNetwork() {
+        try {
+            // Check if we need to switch networks
+            const chainId = await this.provider.send('eth_chainId', []);
+            if (chainId !== `0x${this.chainConfig.id.toString(16)}`) {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: `0x${this.chainConfig.id.toString(16)}` }],
+                });
+            }
+        } catch (error) {
+            if (error.code === 4902) {
+                // Network needs to be added
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: `0x${this.chainConfig.id.toString(16)}`,
+                        chainName: this.chainConfig.name,
+                        nativeCurrency: {
+                            name: 'ETH',
+                            symbol: 'ETH',
+                            decimals: 18
+                        },
+                        rpcUrls: [this.chainConfig.rpcUrl],
+                        blockExplorerUrls: [this.chainConfig.explorer]
+                    }]
+                });
+            } else {
+                throw error;
+            }
         }
     }
 
     async getContract(address, abi) {
         if (!this.provider) await this.connect();
-        
-        // Always use signer if available, otherwise use provider
-        const contractRunner = this.signer || this.provider;
-        const contract = new ethers.Contract(address, abi, contractRunner);
-        
-        // Verify contract connection
-        console.log('Contract initialized at:', address);
-        return contract;
+        return new ethers.Contract(address, abi, this.signer);
     }
 
     async getAddress() {
-        try {
-            if (!this.signer) {
-                await this.connect();
-            }
-            if (!this.signer) {
-                throw new Error('No signer available');
-            }
-            return await this.signer.getAddress();
-        } catch (error) {
-            console.error('Error getting address:', error);
-            throw error;
+        if (!this.signer) {
+            await this.connect();
         }
+        if (!this.signer) {
+            throw new Error('No signer available');
+        }
+        return await this.signer.getAddress();
     }
 
     async isConnected() {

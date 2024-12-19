@@ -1,3 +1,5 @@
+import config from '../config';
+
 export const SUPPORTED_CHAINS = {
     GANACHE: {
         id: 1337,
@@ -7,25 +9,17 @@ export const SUPPORTED_CHAINS = {
         explorer: '',
         isEVM: true
     },
-    ETHEREUM: {
-        id: 1,
-        name: 'Ethereum Mainnet',
-        rpcUrl: process.env.REACT_APP_ETH_RPC_URL,
+    SEPOLIA: {
+        id: 11155111,
+        name: 'Sepolia',
+        rpcUrl: config.rpcUrl,
         currency: 'ETH',
-        explorer: 'https://etherscan.io',
-        isEVM: true
-    },
-    POLYGON: {
-        id: 137,
-        name: 'Polygon',
-        rpcUrl: process.env.REACT_APP_POLYGON_RPC_URL,
-        currency: 'MATIC',
-        explorer: 'https://polygonscan.com',
+        explorer: 'https://sepolia.etherscan.io',
         isEVM: true
     }
 };
 
-export const DEFAULT_CHAIN = 'GANACHE';
+export const DEFAULT_CHAIN = config.network.toUpperCase();
 
 export const getChainById = (chainId) => {
     return Object.values(SUPPORTED_CHAINS).find(chain => chain.id === chainId);
