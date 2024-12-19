@@ -2,18 +2,21 @@ require("@nomicfoundation/hardhat-toolbox");
 require('dotenv').config();
 
 // For debugging
-console.log('GANACHE_PRIVATE_KEY:', process.env.GANACHE_PRIVATE_KEY);
+console.log('Network configs:');
+console.log('- Ganache private key:', process.env.GANACHE_PRIVATE_KEY ? '✓' : '✗');
+console.log('- Sepolia private key:', process.env.PRIVATE_KEY ? '✓' : '✗');
+console.log('- Sepolia RPC URL:', process.env.SEPOLIA_RPC_URL ? '✓' : '✗');
 
-// Remove 0x prefix if present and ensure proper format
 const formatPrivateKey = (key) => {
     if (!key) return null;
     return key.startsWith('0x') ? key : `0x${key}`;
 };
 
 const GANACHE_PRIVATE_KEY = formatPrivateKey(process.env.GANACHE_PRIVATE_KEY);
+const SEPOLIA_PRIVATE_KEY = formatPrivateKey(process.env.PRIVATE_KEY);
 
-if (!GANACHE_PRIVATE_KEY) {
-    console.error('Warning: GANACHE_PRIVATE_KEY not found in .env');
+if (!SEPOLIA_PRIVATE_KEY) {
+    console.warn('Warning: Sepolia private key not found in .env');
 }
 
 module.exports = {
@@ -34,12 +37,9 @@ module.exports = {
         sepolia: {
             url: process.env.SEPOLIA_RPC_URL,
             chainId: 11155111,
-            accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-        },
-        polygon: {
-            url: process.env.POLYGON_RPC_URL,
-            chainId: 137,
-            accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+            accounts: SEPOLIA_PRIVATE_KEY ? [SEPOLIA_PRIVATE_KEY] : [],
+            gas: 2100000,
+            gasPrice: 8000000000
         }
     },
     etherscan: {

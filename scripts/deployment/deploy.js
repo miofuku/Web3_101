@@ -12,9 +12,9 @@ async function updateEnvFile(contracts, network) {
         envContent = fs.readFileSync(envPath, 'utf8');
     }
 
-    // Update contract addresses
+    // Update contract addresses with network prefix
     Object.entries(contracts).forEach(([name, address]) => {
-        const varName = `TRAVEL_${name}_ADDRESS`;
+        const varName = `${network.toUpperCase()}_TRAVEL_${name}_ADDRESS`;
         if (envContent.includes(varName)) {
             envContent = envContent.replace(
                 new RegExp(`${varName}=.*`), 
@@ -25,7 +25,7 @@ async function updateEnvFile(contracts, network) {
         }
     });
 
-    // Update network
+    // Update current network
     if (envContent.includes('DEPLOY_NETWORK=')) {
         envContent = envContent.replace(
             /DEPLOY_NETWORK=.*/,
@@ -42,6 +42,10 @@ async function updateEnvFile(contracts, network) {
 async function main() {
     const network = process.env.HARDHAT_NETWORK || 'ganache';
     console.log(`Deploying to ${network}...`);
+
+    // Get the deployer
+    const [deployer] = await hre.ethers.getSigners();
+    console.log(`Deploying with account: ${deployer.address}`);
 
     // Deploy contracts
     const TravelNFT = await hre.ethers.getContractFactory("TravelNFT");
